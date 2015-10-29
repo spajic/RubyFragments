@@ -8,19 +8,26 @@ require 'pry'
   #config.visible_text_only = true
 #end
 
-session = Capybara::Session.new(:selenium)
-session.visit "https://sede.administracionespublicas.gob.es/icpplustieb/citar"
+puts Capybara.default_max_wait_time
+Capybara.default_max_wait_time = 5
 
-if session.has_content?("AUTORIZACIONES DE REGRESO")
-  puts "AUTORIZACIONES DE REGRESO found, captain!"
-  session.select("AUTORIZACIONES DE REGRESO")
-  session.click_on("Aceptar")
-  session.click_on("ENTRAR")
-  session.find(:xpath, '//input[@id="rdbTipoDoc" and @value="PASAPORTE"]').click
-  session.fill_in('txtNieAux', :with => '659050091')
-  session.fill_in('txtDesCitado', :with => 'IVAN IVANOV')
-  session.fill_in('txtAnnoCitado', :with => '1987')
-  session.fill_in('txtFecha', :with => '01/01/2015')
+s = Capybara::Session.new(:selenium)
+s.visit "https://sede.administracionespublicas.gob.es/icpplus/index.html"
+
+tag_content = "PROVINCIAS DISPONIBLES"
+if s.has_content?(tag_content)
+  puts "#{tag_content} found, captain!"
+  s.select("Barcelona")
+  s.click_on("Aceptar")
+  s.click_on("Autorización de Regreso.")
+  s.select "AUTORIZACIONES DE REGRESO", from: 't'
+  s.click_on("Aceptar")
+  s.click_on("ENTRAR")
+  s.find(:xpath, '//input[@id="rdbTipoDoc" and @value="PASAPORTE"]').click
+  s.fill_in('txtNieAux', :with => '659050091')
+  s.fill_in('txtDesCitado', :with => 'IVAN IVANOV')
+  s.fill_in('txtAnnoCitado', :with => '1987')
+  s.fill_in('txtFecha', :with => '01/01/2015')
   binding.pry
   # session.save_and_open_page 
 else
