@@ -11,3 +11,8 @@ end
 
 puts "PRETTY PRINT PAGE"
 pp page
+
+# Выбрать для TRÁMITES DISPONIBLES PARA LA PROVINCIA SELECCIONADA 
+# из выпадающего списка значение "AUTORIZACIONES DE REGRESO"
+
+# Нажать кнопку  ACEPTAR
