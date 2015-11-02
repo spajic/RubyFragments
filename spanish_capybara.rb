@@ -23,6 +23,17 @@ class CaptchaSolverByHand
   end
 end
 
+class Appointment
+  attr_reader :name, :pasport, :country, :phone, :mail
+  def initialize(name, pasport, country, phone, mail)
+    @name = name
+    @pasport = pasport
+    @country = country
+    @phone = phone
+    @mail = mail
+  end
+end
+
 class Step0
   def step(session)
   	@s = session
@@ -37,7 +48,7 @@ class Step0
   end
 end
 
-class StepsBeforePassportBarcelona
+class StepsBeforePassportBarcelonaRegresso
   def step (session)
       @s = session
       @s.select("Barcelona")
@@ -49,7 +60,19 @@ class StepsBeforePassportBarcelona
   end
 end
 
-class StepsBeforePassportMadrid
+class StepsBeforePassportBarcelonaExtranjero
+  def step (session)
+      @s = session
+      @s.select("Barcelona")
+      @s.click_on("Expedición de Tarjeta de Identidad de Extranjero.")
+      @s.click_on("Expedición de Tarjeta de Identidad de Extranjero.")
+      @s.select "TOMA DE HUELLAS (EXPEDICIÓN DE TARJETA) Y RENOVACIÓN DE TARJETA DE LARGA DURACIÓN"#, :from => "t"
+      @s.click_on("Aceptar")
+      @s.click_on("ENTRAR")
+  end
+end
+
+class StepsBeforePassportMadridRegresso
   def step (session)
       @s = session
       @s.select("Madrid")
@@ -61,7 +84,7 @@ class StepsBeforePassportMadrid
   end
 end
 
-class FillPassport
+class FillPassportRegresso
   def step (session, captcha_solver)
   	@s = session
   	@s.find(:xpath, '//input[@id="rdbTipoDoc" and @value="PASAPORTE"]').click
@@ -69,6 +92,24 @@ class FillPassport
     @s.fill_in('txtDesCitado', :with => 'IVAN IVANOV')
     @s.fill_in('txtAnnoCitado', :with => '1987')
     @s.fill_in('txtFecha', :with => '01/01/2015')
+    @s.fill_in('txtCaptcha', :with => captcha_solver.solve)
+    @s.click_on("Aceptar")
+  end
+end
+
+class FillPassportExtranjero
+  attr_reader :appointment
+  def initialize(appointment)
+    @appointment = appointment
+  end
+  def step (session, captcha_solver)
+    @s = session
+    @s.find(:xpath, '//input[@id="rdbTipoDoc" and @value="PASAPORTE"]').click
+    @s.fill_in('txtNieAux', :with => appointment.pasport)
+    @s.fill_in('txtDesCitado', :with => appointment.name)
+    #@s.fill_in('txtAnnoCitado', :with => '1987')
+    #@s.fill_in('txtFecha', :with => '01/01/2015')
+    @s.select appointment.country
     @s.fill_in('txtCaptcha', :with => captcha_solver.solve)
     @s.click_on("Aceptar")
   end
@@ -138,10 +179,12 @@ class SpanishRobot
   end
 end
 
+spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gmail.com")
 cs = CaptchaSolverByHand.new
 step0 = Step0.new
-steps_before_passport = StepsBeforePassportBarcelona.new
+steps_before_passport = StepsBeforePassportBarcelonaExtranjero.new
 #steps_before_passport = StepsBeforePassportMadrid.new
-fill_passport = FillPassport.new
+fill_passport = FillPassportExtranjero.new(spajic)
 step1 = Step1SolicitarCita.new
+
 robot = SpanishRobot.new(cs, step0, steps_before_passport, fill_passport, step1)
