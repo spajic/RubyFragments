@@ -84,6 +84,18 @@ class StepsBeforePassportMadridRegresso
   end
 end
 
+class StepsBeforePassportMadridExtranjero
+  def step (session)
+      @s = session
+      @s.select("Madrid")
+      @s.click_on("Aceptar")
+      @s.click_on("Aceptar")
+      @s.select "TOMA DE HUELLAS (EXPEDICIÓN DE TARJETA) Y RENOVACIÓN DE TARJETA DE LARGA DURACIÓN"
+      @s.click_on("Aceptar")
+      @s.click_on("ENTRAR")  
+  end
+end
+
 class FillPassportRegresso
   def step (session, captcha_solver)
   	@s = session
@@ -122,26 +134,73 @@ class Step1SolicitarCita
 
   	until @s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]')
       sleep_time = rand 10
-      puts "Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
+      puts "#{Time.now} - Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
       sleep sleep_time
       @s.click_on("Volver")
       @s.click_on("SOLICITAR CITA")  
   	end
-  	puts "HOORAY!!!"
+  	puts "HOORAY!!! Step 1 successfull"
     @s.click_on("Siguiente")
-    print "robot is waiting..."
+  end
+end
+
+class Step2EnterPhoneAndMail
+  attr_reader :appointment
+  def initialize(appointment)
+    @appointment = appointment
+  end
+  def step(session)
+    @s = session
+    @s.fill_in('txtTelefonoCitado', :with => appointment.phone)
+    @s.fill_in('emailUNO', :with => appointment.mail)
+    @s.fill_in('emailDOS', :with => appointment.mail)
+    @s.click_on("Siguiente")
+    puts "Step 2 successfull"
+  end
+end
+
+class Step3ChooseCita
+  def step(session)
+    puts "Step 3"
+    @s = session
+    @s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
+    @s.click_on("Siguiente")
+    puts "Step 3 successfull"
+  end
+end
+
+class Step4Confirm
+  def step(session)
+    puts "Step 4"
+    @s = session
+    @s.check('chkTotal')
+    @s.check('enviarCorreo')
+    @s.click_on('Confirmar')
+    puts "Step 4 successfull"
+    puts "Robot is waiting..."
     w = gets
   end
 end
 
+  # Итоговая страничка с нашим номером, который нам должен быть отправлен на email
+  # Nº de Justificante de cita: AB7AF66H
+  # <td class="tituloTabla" style="font-size:18px">
+  # Nº de Justificante de cita:
+  # <span id="justificanteFinal" class="justificanteBold"> AB7AF66H </span>
+  # </td>
+
+
 class SpanishRobot
   def initialize(captcha_solver, step0, steps_before_passport, fill_passport,
-  	step1)
+  	step1, step2, step3, step4)
   	@captcha_solver = captcha_solver
   	@step0 = step0
   	@steps_before_passport = steps_before_passport
   	@fill_passport = fill_passport
   	@step1 = step1
+    @step2 = step2
+    @step3 = step3
+    @step4 = step4
     init_capybara
     step_through_site    
   end
@@ -154,37 +213,25 @@ class SpanishRobot
       @steps_before_passport.step @s
       @fill_passport.step @s, @captcha_solver 
       @step1.step @s
+      @step2.step @s
+      @step3.step @s
+      @step4.step @s
       
-      
-
-      # Заполняем телефон и email два раза
-      # Siguiente
-      # Выбираем radio button "Seleccionar CITA 1"
-      # Siguente
-      # Устанавливаем два чекбокса 
-      #   chkTotal
-      #   enviarCorreo
-      # нажимаем кнопку confirmar
-      # Итоговая страничка с нашим номером, который нам должен быть отправлен на email
-      # Nº de Justificante de cita: AB7AF66H
-      # <td class="tituloTabla" style="font-size:18px">
-      # Nº de Justificante de cita:
-      # <span id="justificanteFinal" class="justificanteBold"> AB7AF66H </span>
-      # </td>
-
-
-
       #binding.pry
       # session.save_and_open_page 
   end
 end
 
 spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gmail.com")
+appl = spajic
 cs = CaptchaSolverByHand.new
 step0 = Step0.new
-steps_before_passport = StepsBeforePassportBarcelonaExtranjero.new
-#steps_before_passport = StepsBeforePassportMadrid.new
-fill_passport = FillPassportExtranjero.new(spajic)
+#steps_before_passport = StepsBeforePassportBarcelonaExtranjero.new
+steps_before_passport = StepsBeforePassportMadridExtranjero.new
+fill_passport = FillPassportExtranjero.new(appl)
 step1 = Step1SolicitarCita.new
+step2 = Step2EnterPhoneAndMail.new(appl)
+step3 = Step3ChooseCita.new
+step4 = Step4Confirm.new
 
-robot = SpanishRobot.new(cs, step0, steps_before_passport, fill_passport, step1)
+robot = SpanishRobot.new(cs, step0, steps_before_passport, fill_passport, step1, step2, step3, step4)
