@@ -176,7 +176,7 @@ class Step1SolicitarCita < Step
     tries = 1
   	until s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]')
       sleep_time = rand 1
-      puts "#{Time.now}, try #{tries} - Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
+      puts "#{(Time.now + 11*3600).strftime("%H:%M:%S")}, try #{tries} - Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
       tries += 1
       sleep sleep_time
       s.click_on("Volver")
