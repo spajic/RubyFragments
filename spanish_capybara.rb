@@ -1,4 +1,5 @@
 require 'capybara'
+require 'capybara/poltergeist'
 #require 'pry'
 
 #Capybara.configure do |config|
@@ -35,10 +36,11 @@ class Appointment
 end
 
 class Scenario
-  attr_reader :name, :session, :appointment, :captcha_solver, :steps
-  def initialize(name, session, appointment, captcha_solver, steps)
+  attr_reader :name, :session, :engine, :appointment, :captcha_solver, :steps
+  def initialize(name, session, engine, appointment, captcha_solver, steps)
     @name = name
     @session = session
+    @engine = engine
     @appointment = appointment
     @captcha_solver = captcha_solver
     @steps = steps
@@ -71,6 +73,9 @@ class Step
   end
   def captcha_solver()
     @scenario.captcha_solver
+  end
+  def engine()
+    @scenario.engine
   end
 
   def step()
@@ -105,7 +110,7 @@ class StepsBeforePassportBarcelonaRegresso < Step
   def step
       s.select("Barcelona")
       s.click_on("Autorización de Regreso.")
-      s.click_on("Autorización de Regreso.")
+      s.click_on("Autorización de Regreso.") if engine == "selenium"
       s.select "AUTORIZACIONES DE REGRESO"#, :from => "t"
       s.click_on("Aceptar")
       s.click_on("ENTRAR")
@@ -116,7 +121,7 @@ class StepsBeforePassportBarcelonaExtranjero < Step
   def step
       s.select("Barcelona")
       s.click_on("Expedición de Tarjeta de Identidad de Extranjero.")
-      s.click_on("Expedición de Tarjeta de Identidad de Extranjero.")
+      s.click_on("Expedición de Tarjeta de Identidad de Extranjero.") if engine == "selenium"
       s.select "TOMA DE HUELLAS (EXPEDICIÓN DE TARJETA) Y RENOVACIÓN DE TARJETA DE LARGA DURACIÓN"#, :from => "t"
       s.click_on("Aceptar")
       s.click_on("ENTRAR")
@@ -175,10 +180,10 @@ class Step1SolicitarCita < Step
     s.click_on("SOLICITAR CITA")  
     tries = 1
   	until s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]')
-      sleep_time = rand 1
+      sleep_time = 0
       puts "#{(Time.now + 11*3600).strftime("%H:%M:%S")}, try #{tries} - Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
       tries += 1
-      sleep sleep_time
+      #sleep sleep_time
       s.click_on("Volver")
       s.click_on("SOLICITAR CITA")  
   	end
@@ -238,7 +243,7 @@ OptionParser.new do |opts|
     args[:scenario] = scenario
   end
 
-  opts.on("-e", "-engine", "capybara (по умолчанию) или phantomjs") do |engine|
+  opts.on("-e", "-engine", "selenium или poltergeist") do |engine|
     args[:engine] = engine
   end
 
@@ -254,8 +259,21 @@ spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gm
 first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "bestspajic@gmail.com")
 
 
-Capybara.default_max_wait_time = 15
-session = Capybara::Session.new(:selenium)
+Capybara.default_max_wait_time = 5
+Capybara.register_driver :poltergeist do |app|
+  Capybara::Poltergeist::Driver.new(app, 
+    {debug: false, js_errors: false, timeout: 5000, 
+      phantomjs_options: ['--load-images=yes', '--ignore-ssl-errors=yes']})
+end
+
+drivers = {"selenium" => :selenium, "poltergeist" => :poltergeist}
+unless (drivers.keys.include? args[:engine])
+  puts "Specified engine not supported. Exit now"
+  exit(1)
+end
+
+#session = Capybara::Session.new(:selenium)
+session = Capybara::Session.new(drivers[args[:engine]])
 appointment = first_client
 captcha_solver = CaptchaSolverByHand.new
 
@@ -289,5 +307,5 @@ if !steps_scenarios[args[:scenario]]
 end
 
 SpanishCapybara = Scenario.new(
-  "SpanishCapybara", session, appointment, captcha_solver, steps_scenarios[args[:scenario]])
+  "SpanishCapybara", session, args[:engine], appointment, captcha_solver, steps_scenarios[args[:scenario]])
 SpanishCapybara.step
