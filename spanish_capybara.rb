@@ -228,6 +228,27 @@ end
   #binding.pry
   # session.save_and_open_page 
   
+require 'optparse'
+args = {scenario: 'BarcelonaExtranjero', engine: 'capybara'}
+
+OptionParser.new do |opts|
+  opts.banner = "Порядок вызова капибары: spanish_capybara.rb [options]"
+
+  opts.on("-s", "-scenario", "Название сценария для исполнения") do |scenario|
+    args[:scenario] = scenario
+  end
+
+  opts.on("-e", "-engine", "capybara (по умолчанию) или phantomjs") do |engine|
+    args[:engine] = engine
+  end
+
+  opts.on_tail("-h", "-help", "Показать эту справку") do
+    puts opts
+    exit
+  end
+end.parse!
+
+
 spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gmail.com")
 #first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "katia@spain-immigration.es")
 first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "bestspajic@gmail.com")
@@ -237,10 +258,10 @@ Capybara.default_max_wait_time = 15
 session = Capybara::Session.new(:selenium)
 appointment = first_client
 captcha_solver = CaptchaSolverByHand.new
-steps = [
+
+steps_barcelona_extranjero = [
   Step0.new("0 - visit site"),
-  StepsBeforePassportBarcelonaExtranjero.new("Before passport Madrid Extranjero"),
-  #StepsBeforePassportMadridExtranjero.new("Before passport Madrid Extranjero"),
+  StepsBeforePassportBarcelonaExtranjero.new("Before passport Barcelona Extranjero"),
   FillPassportExtranjero.new("Fill Passport Extranjero"),
   Step1SolicitarCita.new("Multiple Tries to Solicitar Cita"), 
   Step2EnterPhoneAndMail.new("Enter phone and email"),
@@ -248,5 +269,25 @@ steps = [
   Step4Confirm.new("Confirm and Send Notification to email"),
   Step5Final.new("Wait on Final Page")]
 
-SpanishCapybara = Scenario.new("SpanishCapybara", session, appointment, captcha_solver, steps)
+steps_madrid_extranjero = [
+  Step0.new("0 - visit site"),
+  StepsBeforePassportMadridExtranjero.new("Before passport Madrid Extranjero"),
+  FillPassportExtranjero.new("Fill Passport Extranjero"),
+  Step1SolicitarCita.new("Multiple Tries to Solicitar Cita"), 
+  Step2EnterPhoneAndMail.new("Enter phone and email"),
+  Step3ChooseCita.new("Choose Cita"),
+  Step4Confirm.new("Confirm and Send Notification to email"),
+  Step5Final.new("Wait on Final Page")]
+
+steps_scenarios = {
+  "BarcelonaExtranjero" => steps_barcelona_extranjero, 
+  "MadridExtranjero" => steps_madrid_extranjero }
+  
+if !steps_scenarios[args[:scenario]]
+  puts "Scenario #{args[:scenario]} not found! Exit now."
+  exit(1)
+end
+
+SpanishCapybara = Scenario.new(
+  "SpanishCapybara", session, appointment, captcha_solver, steps_scenarios[args[:scenario]])
 SpanishCapybara.step
