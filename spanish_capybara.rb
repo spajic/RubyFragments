@@ -2,13 +2,6 @@ require 'capybara'
 require 'capybara/poltergeist'
 #require 'pry'
 
-#Capybara.configure do |config|
-  #config.match = :one
-  #config.exact_options = true
-  #config.ignore_hidden_elements = true
-  #config.visible_text_only = true
-#end
-
 class CaptchaSolverByHand  
   attr_reader :result
   
@@ -17,9 +10,11 @@ class CaptchaSolverByHand
   end
 
   def solve
+    # todo: 
+    # сохранить капчу в файл и открыть
     print "Enter CAPTHCA value, please: "
-    @result = gets
-    puts "You entered #{@result.chomp}, thank you"
+    @result = gets.chomp!
+    puts "You entered #{@result}, thank you"
     @result
   end
 end
@@ -76,6 +71,20 @@ class Step
   end
   def engine()
     @scenario.engine
+  end
+
+  def save_page()
+    s.save_page(name)
+  end
+
+  def save_and_open_page()
+    s.save_and_open_page(name)
+  end
+  def save_screenshot()
+    s.save_screenshot(name)
+  end
+  def save_and_open_screenshot()
+    s.save_and_open_screenshot(name)
   end
 
   def step()
@@ -170,6 +179,7 @@ class FillPassportExtranjero < Step
     s.fill_in('txtNieAux', :with => appointment.pasport)
     s.fill_in('txtDesCitado', :with => appointment.name)
     s.select appointment.country
+    s.save_and_open_screenshot
     s.fill_in('txtCaptcha', :with => captcha_solver.solve)
     s.click_on("Aceptar")
   end
@@ -179,11 +189,15 @@ class Step1SolicitarCita < Step
   def step
     s.click_on("SOLICITAR CITA")  
     tries = 1
-  	until s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]')
-      sleep_time = 0
-      puts "#{(Time.now + 11*3600).strftime("%H:%M:%S")}, try #{tries} - Button Siguiente not found. Sleep for #{sleep_time}s and try again!"
+    s.save_and_open_screenshot
+    
+    sorry_message = 'En este momento no hay citas disponibles.'
+  	#if s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
+    if s.has_content? sorry_message
+      sleep_time = rand 10
+      puts "#{(Time.now + 11*3600).strftime("%H:%M:%S")}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
-      #sleep sleep_time
+      sleep sleep_time
       s.click_on("Volver")
       s.click_on("SOLICITAR CITA")  
   	end
@@ -204,6 +218,7 @@ end
 class Step3ChooseCita < Step
   def step
     s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
+    s.save_and_open_screenshot
     s.click_on("Siguiente")
   end
 end
@@ -212,12 +227,26 @@ class Step4Confirm < Step
   def step
     s.check('chkTotal')
     s.check('enviarCorreo')
+    s.save_and_open_screenshot
     s.click_on('Confirmar')
+  end
+end
+
+class Step4WaitUserToConfirm < Step
+  def step
+    s.check('chkTotal')
+    s.check('enviarCorreo')
+    s.save_and_open_screenshot
+    s.save_and_open_page
+    puts "Robot is waiting. Press enter to confirm, SEND EMAIL THAT NEEDS TO BE ANNULATED, and continue."
+    w = gets
   end
 end
 
 class Step5Final < Step
   def step
+    s.save_and_open_screenshot
+    s.save_and_open_page
     puts "Robot is waiting"
     w = gets
   end
@@ -258,12 +287,18 @@ spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gm
 #first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "katia@spain-immigration.es")
 first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "bestspajic@gmail.com")
 
+#Capybara.configure do |config|
+  #config.match = :one
+  #config.exact_options = true
+  #config.ignore_hidden_elements = true
+  #config.visible_text_only = true
+#end
 
-Capybara.default_max_wait_time = 5
+Capybara.default_max_wait_time = 20
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, 
-    {debug: false, js_errors: false, timeout: 5000, 
-      phantomjs_options: ['--load-images=yes', '--ignore-ssl-errors=yes']})
+    {debug: false, js_errors: false, timeout: 20000, 
+      phantomjs_options: ['--debug=no', '--load-images=yes', '--ignore-ssl-errors=yes', '--ssl-protocol=TLSv1']})
 end
 
 drivers = {"selenium" => :selenium, "poltergeist" => :poltergeist}
@@ -272,7 +307,6 @@ unless (drivers.keys.include? args[:engine])
   exit(1)
 end
 
-#session = Capybara::Session.new(:selenium)
 session = Capybara::Session.new(drivers[args[:engine]])
 appointment = first_client
 captcha_solver = CaptchaSolverByHand.new
@@ -294,7 +328,7 @@ steps_madrid_extranjero = [
   Step1SolicitarCita.new("Multiple Tries to Solicitar Cita"), 
   Step2EnterPhoneAndMail.new("Enter phone and email"),
   Step3ChooseCita.new("Choose Cita"),
-  Step4Confirm.new("Confirm and Send Notification to email"),
+  Step4WaitUserToConfirm.new("Wait User to Confirm"),
   Step5Final.new("Wait on Final Page")]
 
 steps_scenarios = {
