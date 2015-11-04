@@ -2,6 +2,10 @@ require 'capybara'
 require 'capybara/poltergeist'
 #require 'pry'
 
+def mytime
+  (Time.now + 11*3600).strftime("%H:%M:%S")
+end
+
 class CaptchaSolverByHand  
   attr_reader :result
   
@@ -55,8 +59,9 @@ end
 class Step
   attr_reader :name, :session
   attr_writer :scenario
-  
+    
   def initialize(name)
+    @FolderToSave = "CapybaraStash-#{mytime}"
     @name = name
   end
 
@@ -74,17 +79,23 @@ class Step
   end
 
   def save_page()
-    s.save_page(name)
+    path = "#{@FolderToSave}/#{mytime}-#{name}.html"
+    s.save_page(path)
+    puts "Saved html to #{path}"
   end
 
   def save_and_open_page()
-    s.save_and_open_page(name)
+    path = "#{@FolderToSave}/#{mytime}-#{name}.html"
+    s.save_and_open_page(path)
+    puts "Saved html to #{path}"
   end
   def save_screenshot()
-    s.save_screenshot(name)
+    s.save_screenshot
+    puts "Saved png to root folder"
   end
   def save_and_open_screenshot()
-    s.save_and_open_screenshot(name)
+    s.save_and_open_screenshot
+    puts "Saved png to root folder and open it"
   end
 
   def step()
@@ -154,6 +165,7 @@ class StepsBeforePassportMadridExtranjero < Step
       s.click_on("Aceptar")
       s.click_on("Aceptar")
       s.select "TOMA DE HUELLAS (EXPEDICIÓN DE TARJETA) Y RENOVACIÓN DE TARJETA DE LARGA DURACIÓN"
+      save_page
       s.click_on("Aceptar")
       s.click_on("ENTRAR")  
   end
@@ -179,7 +191,7 @@ class FillPassportExtranjero < Step
     s.fill_in('txtNieAux', :with => appointment.pasport)
     s.fill_in('txtDesCitado', :with => appointment.name)
     s.select appointment.country
-    s.save_and_open_screenshot
+    save_and_open_screenshot
     s.fill_in('txtCaptcha', :with => captcha_solver.solve)
     s.click_on("Aceptar")
   end
@@ -189,19 +201,22 @@ class Step1SolicitarCita < Step
   def step
     s.click_on("SOLICITAR CITA")  
     tries = 1
-    s.save_and_open_screenshot
+    save_screenshot
+    save_page
     
     sorry_message = 'En este momento no hay citas disponibles.'
-  	#if s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
-    if s.has_content? sorry_message
+  	#while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
+    while Capybara.using_wait_time(3) {s.has_content?(sorry_message)}
       sleep_time = rand 10
-      puts "#{(Time.now + 11*3600).strftime("%H:%M:%S")}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
+      puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
       sleep sleep_time
       s.click_on("Volver")
       s.click_on("SOLICITAR CITA")  
   	end
   	puts "HOORAY!!! Step 1 successfull"
+    save_and_open_screenshot
+    save_page
     s.click_on("Siguiente")
   end
 end
@@ -218,7 +233,7 @@ end
 class Step3ChooseCita < Step
   def step
     s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
-    s.save_and_open_screenshot
+    save_and_open_screenshot
     s.click_on("Siguiente")
   end
 end
@@ -227,7 +242,7 @@ class Step4Confirm < Step
   def step
     s.check('chkTotal')
     s.check('enviarCorreo')
-    s.save_and_open_screenshot
+    save_and_open_screenshot
     s.click_on('Confirmar')
   end
 end
@@ -236,8 +251,8 @@ class Step4WaitUserToConfirm < Step
   def step
     s.check('chkTotal')
     s.check('enviarCorreo')
-    s.save_and_open_screenshot
-    s.save_and_open_page
+    save_and_open_screenshot
+    save_page
     puts "Robot is waiting. Press enter to confirm, SEND EMAIL THAT NEEDS TO BE ANNULATED, and continue."
     w = gets
   end
@@ -245,8 +260,8 @@ end
 
 class Step5Final < Step
   def step
-    s.save_and_open_screenshot
-    s.save_and_open_page
+    save_and_open_screenshot
+    save_and_page
     puts "Robot is waiting"
     w = gets
   end
