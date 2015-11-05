@@ -1,6 +1,19 @@
 require 'capybara'
 require 'capybara/poltergeist'
 #require 'pry'
+require 'pony'
+
+Pony.options = { :via => :smtp,
+  :via_options => {
+    :address              => 'smtp.gmail.com',
+    :port                 => '587',#'25',#'587'
+    :enable_starttls_auto => true,
+    :user_name            => ENV['PONY_MAIL'], # моя почта
+    :password             => ENV['PONY_PASSWORD'], # пароль приложения, сгенерированный в gmail
+    :authentication       => :plain, # :plain, :login, :cram_md5, no auth by default
+    :domain               =>'HELO' # the HELO domain provided by the client to the server
+  }
+}
 
 def mytime
   (Time.now + 11*3600).strftime("%H:%M:%S")
@@ -76,6 +89,11 @@ class Step
   end
   def engine()
     @scenario.engine
+  end
+
+  def send_mail(subject, body)
+    Pony.mail(:to => 'bestspajic@gmail.com', :from => 'bestspajic@gmail.com', 
+      :subject => subject, :body => body)
   end
 
   def save_page()
@@ -192,6 +210,7 @@ class FillPassportExtranjero < Step
     s.fill_in('txtDesCitado', :with => appointment.name)
     s.select appointment.country
     save_and_open_screenshot
+    send_mail('SpanishCapybara', 'Enter Captcha, please!')
     s.fill_in('txtCaptcha', :with => captcha_solver.solve)
     s.click_on("Aceptar")
   end
