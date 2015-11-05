@@ -318,8 +318,6 @@ class Step4Confirm < Step
     save_page
     s.check('chkTotal')
     s.check('enviarCorreo')
-    puts "Sleep for 5 seconds, don't hurry, afraid to get blank page"
-    sleep 5
     s.click_on('Confirmar')
   end
 end
@@ -332,6 +330,7 @@ class Step4WaitUserToConfirm < Step
     s.check('enviarCorreo')
     puts "Robot is waiting. Press enter to confirm, SEND EMAIL THAT NEEDS TO BE ANNULATED, and continue."
     w = gets
+    s.click_on('Confirmar')
   end
 end
 
@@ -339,8 +338,12 @@ class Step5Final < Step
   def step
     save_and_open_screenshot
     save_page
-    puts "Robot is waiting"
-    w = gets
+    if s.has_xpath?('//span[@id="justificanteFinal"]')
+      puts "ULTIMATE SUCCESS"
+      send_mail("SpanishCapybara", "ULTIMATE SUCCESS!!")
+    else
+      raise 'FINAL PAGE NOT CONTAINS de justificante de cita:'
+    end
   end
 end
 
