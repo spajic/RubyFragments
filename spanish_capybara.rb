@@ -205,8 +205,8 @@ class Step1SolicitarCita < Step
     save_page
     
     sorry_message = 'En este momento no hay citas disponibles.'
-  	#while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
-    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || s.has_no_xpath?('//select')} 
+    #while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
+    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || (no_select = s.has_no_xpath?('//select'))} 
       sleep_time = rand 10
       puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
@@ -226,6 +226,8 @@ class Step2EnterPhoneAndMail < Step
     s.fill_in('txtTelefonoCitado', :with => appointment.phone)
     s.fill_in('emailUNO', :with => appointment.mail)
     s.fill_in('emailDOS', :with => appointment.mail)
+    save_screenshot
+    save_page
     s.click_on("Siguiente")
   end
 end
@@ -234,6 +236,7 @@ class Step3ChooseCita < Step
   def step
     s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
     save_and_open_screenshot
+    save_page
     s.click_on("Siguiente")
   end
 end
@@ -243,6 +246,7 @@ class Step4Confirm < Step
     s.check('chkTotal')
     s.check('enviarCorreo')
     save_and_open_screenshot
+    save_page
     s.click_on('Confirmar')
   end
 end
@@ -261,7 +265,7 @@ end
 class Step5Final < Step
   def step
     save_and_open_screenshot
-    save_and_page
+    save_page
     puts "Robot is waiting"
     w = gets
   end
