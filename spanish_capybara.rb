@@ -57,6 +57,7 @@ class Scenario
     @captcha_solver = captcha_solver
     @steps = steps
   end
+
   def step
     puts "STARTING SCENARIO #{name}"
     @steps.each do |step|
@@ -66,6 +67,13 @@ class Scenario
       step.on_finish
     end
     puts "FINISHED SCENARIO #{name}"
+      
+    rescue => err
+      3.times{puts "==================================="}
+      puts "RUNTIME ERROR: #{err}"
+      puts "Start again!"
+      3.times{puts "==================================="}
+      retry
   end
 end
 
