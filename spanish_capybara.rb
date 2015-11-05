@@ -234,29 +234,31 @@ end
 
 class Step3ChooseCita < Step
   def step
-    s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
     save_and_open_screenshot
     save_page
+    s.find(:xpath, '//input[@type="radio" and @title="Seleccionar CITA 1"]').click
     s.click_on("Siguiente")
   end
 end
 
 class Step4Confirm < Step
   def step
-    s.check('chkTotal')
-    s.check('enviarCorreo')
     save_and_open_screenshot
     save_page
+    s.check('chkTotal')
+    s.check('enviarCorreo')
+    puts "Sleep for 5 seconds, don't hurry, afraid to get blank page"
+    sleep 5
     s.click_on('Confirmar')
   end
 end
 
 class Step4WaitUserToConfirm < Step
   def step
-    s.check('chkTotal')
-    s.check('enviarCorreo')
     save_and_open_screenshot
     save_page
+    s.check('chkTotal')
+    s.check('enviarCorreo')
     puts "Robot is waiting. Press enter to confirm, SEND EMAIL THAT NEEDS TO BE ANNULATED, and continue."
     w = gets
   end
@@ -305,6 +307,7 @@ end.parse!
 spajic = Appointment.new("ALEX V", "4508", "RUSIA", "9164363288", "bestspajic@gmail.com")
 #first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "katia@spain-immigration.es")
 first_client = Appointment.new("VICTORIA MAILYAN", "718965188", "RUSIA", "633441119", "bestspajic@gmail.com")
+second_client = Appointment.new("PAVEL ALEKHIN", "718485981", "RUSIA", "932389998", "bestspajic@gmail.com")
 
 #Capybara.configure do |config|
   #config.match = :one
@@ -317,7 +320,7 @@ Capybara.default_max_wait_time = 20
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, 
     {debug: false, js_errors: false, timeout: 20000, 
-      phantomjs_options: ['--debug=no', '--load-images=yes', '--ignore-ssl-errors=yes', '--ssl-protocol=TLSv1']})
+      phantomjs_options: ['--debug=no', '--load-images=yes', '--ignore-ssl-errors=yes', '--ssl-protocol=any']})
 end
 
 drivers = {"selenium" => :selenium, "poltergeist" => :poltergeist}
@@ -327,7 +330,7 @@ unless (drivers.keys.include? args[:engine])
 end
 
 session = Capybara::Session.new(drivers[args[:engine]])
-appointment = first_client
+appointment = second_client
 captcha_solver = CaptchaSolverByHand.new
 
 steps_barcelona_extranjero = [
