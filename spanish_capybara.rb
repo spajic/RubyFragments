@@ -197,7 +197,7 @@ class FillPassportExtranjero < Step
   end
 end
 
-class Step1SolicitarCita < Step
+class Step1SolicitarCitaMadrid < Step
   def step
     s.click_on("SOLICITAR CITA")  
     tries = 1
@@ -206,7 +206,7 @@ class Step1SolicitarCita < Step
     
     sorry_message = 'En este momento no hay citas disponibles.'
     #while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
-    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || (no_select = s.has_no_xpath?('//select'))} 
+    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || (no_select = s.has_no_xpath?('//select/'))} 
       sleep_time = rand 10
       puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
@@ -215,6 +215,35 @@ class Step1SolicitarCita < Step
       s.click_on("SOLICITAR CITA")  
   	end
   	puts "HOORAY!!! Step 1 successfull"
+    save_and_open_screenshot
+    save_page
+    s.click_on("Siguiente")
+  end
+end
+
+# В отличие от Мадрида нужен конкретный офис: RAMBLA GUIPUSCOA, 74 (BARCELONA)
+# <option value="16">RAMBLA GUIPUSCOA, 74 (BARCELONA)</option>
+class Step1SolicitarCitaBarcelona < Step
+  def step
+    s.click_on("SOLICITAR CITA")  
+    tries = 1
+    save_screenshot
+    save_page
+    
+    sorry_message = 'En este momento no hay citas disponibles.'
+    our_office = "RAMBLA GUIPUSCOA, 74 (BARCELONA)"
+    #while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
+    while Capybara.using_wait_time(3) {
+        s.has_content?(sorry_message) || 
+        (s.has_no_xpath?('//select/option[text() = "RAMBLA GUIPUSCOA, 74 (BARCELONA)"]'))} 
+      sleep_time = rand 10
+      puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
+      tries += 1
+      sleep sleep_time
+      s.click_on("Volver")
+      s.click_on("SOLICITAR CITA")  
+    end
+    puts "HOORAY!!! Step 1 successfull"
     save_and_open_screenshot
     save_page
     s.click_on("Siguiente")
@@ -330,14 +359,14 @@ unless (drivers.keys.include? args[:engine])
 end
 
 session = Capybara::Session.new(drivers[args[:engine]])
-appointment = second_client
+appointment = first_client
 captcha_solver = CaptchaSolverByHand.new
 
 steps_barcelona_extranjero = [
   Step0.new("0 - visit site"),
   StepsBeforePassportBarcelonaExtranjero.new("Before passport Barcelona Extranjero"),
   FillPassportExtranjero.new("Fill Passport Extranjero"),
-  Step1SolicitarCita.new("Multiple Tries to Solicitar Cita"), 
+  Step1SolicitarCitaBarcelona.new("Multiple Tries to Solicitar Cita"), 
   Step2EnterPhoneAndMail.new("Enter phone and email"),
   Step3ChooseCita.new("Choose Cita"),
   Step4Confirm.new("Confirm and Send Notification to email"),
@@ -347,7 +376,7 @@ steps_madrid_extranjero = [
   Step0.new("0 - visit site"),
   StepsBeforePassportMadridExtranjero.new("Before passport Madrid Extranjero"),
   FillPassportExtranjero.new("Fill Passport Extranjero"),
-  Step1SolicitarCita.new("Multiple Tries to Solicitar Cita"), 
+  Step1SolicitarCitaMadrid.new("Multiple Tries to Solicitar Cita"), 
   Step2EnterPhoneAndMail.new("Enter phone and email"),
   Step3ChooseCita.new("Choose Cita"),
   Step4WaitUserToConfirm.new("Wait User to Confirm"),
