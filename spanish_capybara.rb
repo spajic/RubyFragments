@@ -203,11 +203,18 @@ class Step1SolicitarCitaMadrid < Step
     tries = 1
     save_screenshot
     save_page
-    
     sorry_message = 'En este momento no hay citas disponibles.'
     #while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
-    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || (no_select = s.has_no_xpath?('//select/'))} 
-      sleep_time = rand 10
+    #Avda. de los Poblados, S/N (MADRID)
+    while Capybara.using_wait_time(3) {
+        s.has_content?(sorry_message) || 
+        (no_office = s.has_no_xpath?('//select/option[text() = "Avda. de los Poblados, S/N (MADRID)"]'))} 
+      if no_office
+        puts "No sorry message, but no office either" 
+        save_page
+        save_screenshot
+        no_office = false
+      end
       puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
       sleep sleep_time
@@ -232,10 +239,18 @@ class Step1SolicitarCitaBarcelona < Step
     
     sorry_message = 'En este momento no hay citas disponibles.'
     our_office = "RAMBLA GUIPUSCOA, 74 (BARCELONA)"
+    no_office = false
     #while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
     while Capybara.using_wait_time(3) {
         s.has_content?(sorry_message) || 
-        (s.has_no_xpath?('//select/option[text() = "RAMBLA GUIPUSCOA, 74 (BARCELONA)"]'))} 
+        (no_office = s.has_no_xpath?('//select/option[text() = "RAMBLA GUIPUSCOA, 74 (BARCELONA)"]'))} 
+      
+      if no_office
+        puts "No sorry message, but no office either" 
+        save_page
+        save_screenshot
+        no_office = false
+      end
       sleep_time = rand 10
       puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
