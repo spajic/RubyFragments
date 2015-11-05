@@ -206,7 +206,7 @@ class Step1SolicitarCita < Step
     
     sorry_message = 'En este momento no hay citas disponibles.'
   	#while s.has_selector?(:xpath, '//input[@value="Siguiente" and @type="button"]', visible: true)
-    while Capybara.using_wait_time(3) {s.has_content?(sorry_message)}
+    while Capybara.using_wait_time(3) {s.has_content?(sorry_message) || s.has_no_xpath?('//select')} 
       sleep_time = rand 10
       puts "#{mytime}, try #{tries} - #{sorry_message} Sleep for #{sleep_time}s and try again!"
       tries += 1
