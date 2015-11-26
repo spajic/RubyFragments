@@ -1,0 +1,46 @@
+---
+- id: 1
+  from: "Москва (Красногвардейская)"
+  to: "Санкт-Петербург, Автовокзал Обводный кан. 36"
+  start_time: '16:00'
+  end_time: '03:30'
+  start_date: '16:00'
+  end_date: '03:30'
+  amount: 1356 RUB
+  source: gillbus
+- id: 4
+  from: "Москва, м. Комсомольская, Басманный пер. д.4"
+  to: "Санкт-Петербург, Автовокзал Обводный кан. 36"
+  start_time: '21:10'
+  end_time: '08:40'
+  start_date: '21:10'
+  end_date: '08:40'
+  amount: 1175 RUB
+  source: gillbus
+- id: 6
+  from: "Москва (Новоясеневская)"
+  to: "Санкт-Петербург, Автовокзал Обводный кан. 36"
+  start_time: '22:50'
+  end_time: '09:35'
+  start_date: '22:50'
+  end_date: '09:35'
+  amount: 1000 RUB
+  source: etraffic
+- id: 8
+  from: "Москва (Тушинская)"
+  to: "Санкт-Петербург, Автовокзал Обводный кан. 36"
+  start_time: '22:40'
+  end_time: '10:40'
+  start_date: '22:40'
+  end_date: '10:40'
+  amount: 960 RUB
+  source: infobus
+- id: 9
+  from: "Москва (Тушинская)"
+  to: "Санкт-Петербург, Автовокзал Обводный кан. 36"
+  start_time: '22:30'
+  end_time: '10:40'
+  start_date: '22:30'
+  end_date: '10:40'
+  amount: 960 RUB
+  source: gillbus
