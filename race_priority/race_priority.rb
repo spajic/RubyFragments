@@ -1,87 +1,84 @@
 require 'yaml'
-
-sources = YAML.load(File.read("sources.yml"))
-#p sources
-
-trips_yml = YAML.load(File.read("trips.yml"))
+require 'ostruct'
+require 'pry'
 
 class Trip
-	attr_reader :id, :from, :to, :start_time, :end_time, 
-	:start_date, :end_date, :amount, :source
-	def initialize(args, sources)
-		@sources = sources
-		read_from_yml_hash(args)
-	end
-	def read_from_yml_hash(args)
-		@id = args['id']
-		@from = args['from']
-		@to = args['to']
-		@start_time = args['start_time']
-		@end_time = args['end_time']
-		@start_date = args['start_date']
-		@end_date = args['end_date']
-		@amount = args['amount']
-		@source = args['source']
+	attr_reader :attributes
+
+	def initialize(hash)
+		@attributes = OpenStruct.new
+		load_from_hash(hash)
 	end
 
-	def duplicates(other)
-		return true if (from == other.from and
-			to == other.to and
-			start_time == other.start_time and
-			amount == other.amount)
-		return false
+	class << self
+    	attr_accessor :sources_priorities
+  	end
+
+	def load_from_hash(hash)
+		attributes.id 			= hash['id']
+		attributes.from 		= hash['from']
+		attributes.to 			= hash['to']
+		attributes.start_time 	= hash['start_time']
+		attributes.start_date 	= hash['start_date']
+		attributes.end_time 	= hash['end_time']
+		attributes.end_date 	= hash['end_date']
+		attributes.amount 		= hash['amount']
+		attributes.source 		= hash['source']
+	end
+
+	def signature
+		[attributes.from, 		attributes.to, 
+		 attributes.start_time, attributes.start_date,
+		 attributes.end_time,	attributes.end_date,
+		 attributes.amount]
+	end
+
+	def duplicates?(other)
+		signature == other.signature
+	end
+
+	def ==(other)
+		attributes.to_h == other.attributes.to_h
 	end
 
 	def source_priority
-		@sources[source]
+		Trip.sources_priorities[attributes.source]
 	end
 
-	def to_s 
-		from.to_s + ';' +
-		to.to_s + ';' + 
-		start_time.to_s + ';' + 
-		end_time.to_s + ';' + 
-		amount.to_s
-	end
-
-	def to_yml_hash
-		yh = {}
-		yh['id'] = id
-		yh['from'] = from
-		yh['to'] = to
-		yh['start_time'] = start_time
-		yh['end_time'] = end_time
-		yh['start_date'] = start_time
-		yh['end_date'] = end_time
-		yh['amount'] = amount
-		yh['source'] = source
-		return yh
+	def to_h
+		# OpenStruct.to_h даёт ключи в виде :symbols, а надо 'строки'
+		Hash[attributes.to_h.map {|k, v| [k.to_s, v] }]
 	end
 end
 
-trips = []
-trips_yml.each {|el| trips.push(Trip.new(el, sources)) }
+class Trips
+	attr_reader :trips
+	def initialize(yaml_file_name = nil)
+		@trips = []
+		load_from_yaml_file(yaml_file_name) if yaml_file_name
+	end
 
-trips_grouped_by_s = {}
-trips.each do |t| 
-	if (trips_grouped_by_s[t.to_s] == nil)
-		trips_grouped_by_s[t.to_s] = [t] 
-	else
-		trips_grouped_by_s[t.to_s] << (t)
+	def retain_unique_trips_with_largest_priorities!
+		grouped_by_signature = trips.group_by{|t| t.signature}
+		@trips = []
+		grouped_by_signature.each do |k,v|
+			@trips << v.max_by {|t| t.source_priority}
+		end
+	end
+
+	def load_from_yaml_file(file_name)
+		@trips = YAML.load(File.read(file_name)).
+			map {|trip_hash| Trip.new(trip_hash)}
+	end
+
+	def save_to_yaml_file(file_name)
+		File.open(file_name,'w') do |f| 
+   			f.write (@trips.map{|t| t.to_h}).to_yaml
+		end
 	end
 end
 
-unique_trips = []
-
-trips_grouped_by_s.each do |key, value|  
-	sorted = value.sort{|el| el.source_priority}
-	unique_trips.push sorted.last
-end
-
-res = []
-unique_trips.each {|el| res.push(el.to_yml_hash)}
-
-File.open('result.yml','w') do |f| 
-   f.write res.to_yaml
-end
-
+Trip.sources_priorities = YAML.load(File.read("sources.yml"))
+t = Trips.new('trips.yml')
+t.retain_unique_trips_with_largest_priorities!
+t.save_to_yaml_file('result.yml')
